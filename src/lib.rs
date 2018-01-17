@@ -1,3 +1,4 @@
+use std::env;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
@@ -8,13 +9,18 @@ pub struct Config {
 }
 
 impl Config {
-  pub fn new(args: &[String]) -> Result<Config, &'static str> {
-    if args.len() < 3 {
-      return Err("not enough arguments");
-    }
+  pub fn new(mut args: env::Args) -> Result<Config, &'static str> {
+    args.next();
 
-    let query = args[1].clone();
-    let filename = args[2].clone();
+    let query = match args.next() {
+      Some(arg) => arg,
+      None => return Err("Please specify a query argument"),
+    };
+
+    let filename = match args.next() {
+      Some(arg) => arg,
+      None => return Err("Please specify a filename"),
+    };
 
     Ok(Config { query, filename })
   }
@@ -34,15 +40,10 @@ pub fn run(config: Config) -> Result<(), Box<Error>> {
 }
 
 fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-  let mut matches = Vec::new();
-
-  for line in contents.lines() {
-    if line.contains(query) {
-      matches.push(line);
-    }
-  }
-
-  matches
+  contents
+    .lines()
+    .filter(|line| line.contains(query))
+    .collect()
 }
 
 #[cfg(test)]
